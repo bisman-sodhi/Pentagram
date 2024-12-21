@@ -6,12 +6,17 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { text } = body;
+    const apisecret = request.headers.get("X-API-Key");
+    if (apisecret !== process.env.API_KEY_MODAL) {
+      return NextResponse.json({error: "Unauthorized"}, {status: 401});
+    }
 
-    // TODO: Call your Image Generation API here
-    // For now, we'll just echo back the text
     console.log(text)
-
-    const url = new URL("https://bisman-sodhi--main-text-to-image-model-generate.modal.run/")
+    const modal_url = process.env.MODAL_URL;
+    if (!modal_url) {
+      throw new Error("MODAL_URL environment variable is invalid or missing");
+    }
+    const url = new URL(modal_url);
     url.searchParams.set("prompt", text)
     console.log("Requesting URL: ", url.toString())
 
@@ -30,7 +35,6 @@ export async function POST(request: Request) {
         `HTTP error! Status: ${response.status}, Message: ${errorText}`
       );
     }
-    //TODO store prompt as well
     const imageBuffer = await response.arrayBuffer();
     const fileName = `${crypto.randomUUID()}.jpg`
     const blob = await put(fileName, imageBuffer, {
